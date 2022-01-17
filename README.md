@@ -1,10 +1,10 @@
-## Based on BlueTeam Labs Sentinel ## 
-###  ATT&CK Sysmon Configuration
+## Based on BlueTeam Labs ## 
+## Sentinel ATT&CK Sysmon Configuration
 
 
 
 
-## Use ##
+### Use ##
 ### Install ###
 Run with administrator rights
 ~~~~
