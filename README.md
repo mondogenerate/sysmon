@@ -1,6 +1,8 @@
 ## Based on BlueTeam Labs Sentinel ## 
-##              ATT&CK             ##
-##       Sysmon Configuration      ##
+###              ATT&CK             ###
+~~~~       
+Sysmon Configuration
+~~~~
 
 
 
