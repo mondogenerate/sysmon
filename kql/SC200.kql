@@ -1,0 +1,12 @@
+// Process Creation without the parser
+Event
+| where Source == "Microsoft-Windows-Sysmon"
+| where EventID == 1 and EventID == 3
+| project Computer, UserName, RenderedDescription, ProcessId, CommandLine, ParentImage, ParentUser
+
+
+// Process Injection via Reflective DLL w/ SysmonParseALL
+ParseSysmonALL
+| where EventID == 8
+| project TechniqueName, CommandLine, Computer, SourceImage, TargetImage, SourceUser, TargetProcessId, UtcTime
+ 
