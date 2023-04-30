@@ -1,121 +1,50 @@
-[CmdletBinding()]
-param (
-    [Parameter(Mandatory = $true, Position = 0)]
-    [string[]] $Computers,
-
-    [Parameter(Mandatory = $false)]
-    [string] $LogName = $logname,
-
-    [Parameter(Mandatory = $false)]
-    [int] $SizeInMB,
-
-    [Parameter(Mandatory = $false)]
-    [switch] $CheckOnly,
-
-    [Parameter(Mandatory = $false)]
-    [string] $InputFile
-)
-
-function Get-EventLogLimit {
-    param (
-        [string] $Computer,
-        [string] $LogName
-    )
-    $limit = Get-EventLog -List -ComputerName $Computer | Where-Object { $_.Log -eq $LogName }
-    return @{
-        Computer = $Computer
-        LogName = $LogName
-        MaximumSize = $limit.MaximumKilobytes / 1024
-        RetentionDays = $limit.MinimumRetentionDays
-        OverflowAction = $limit.OverflowAction
-    }
-}
-
-function Get-InputComputers {
-    param (
-        [string] $InputFile
-    )
-    if (-not $InputFile) {
-        return
-    }
-    if (-not (Test-Path $InputFile)) {
-        Write-Warning "The specified input file '$InputFile' does not exist."
-        return
-    }
-    return Get-Content $InputFile
-}
-
 function Set-WindowsLogLimits {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string[]] $Computers,
 
-        [string] $LogName = $logname,
+        [Parameter(Mandatory = $false)]
+        [switch] $CheckLogs,
 
-        [int] $SizeInMB,
+        [Parameter(Mandatory = $false)]
+        [int] $SizeMB,
 
-        [switch] $CheckOnly
+        [Parameter(Mandatory = $false)]
+        [string] $OutputDirectory = "C:\logs"
     )
 
-    if (-not $LogName) {
-        Write-Warning "No log name specified, using default '$logname'."
-        $LogName = $logname
-    }
-
-    $logParams = @{
-        System = @{
-            MaximumSize = 128
-            RetentionDays = 30
-            OverflowAction = "OverwriteOlder"
-        }
-        Security = @{
-            MaximumSize = 128
-            RetentionDays = 30
-            OverflowAction = "OverwriteOlder"
-        }
-        Application = @{
-            MaximumSize = 128
-            RetentionDays = 30
-            OverflowAction = "OverwriteOlder"
-        }
-        $LogName = @{
-            MaximumSize = if ($SizeInMB) { $SizeInMB } else { 128 }
-            RetentionDays = 30
-            OverflowAction = "OverwriteOlder"
-        }
-    }
-
-    $computers = Get-InputComputers -InputFile $InputFile | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-    if (-not $computers) {
-        Write-Warning "No valid computers specified."
-        return
-    }
-
-    foreach ($computer in $computers) {
-        if ($CheckOnly) {
-            Write-Host "Checking log limit for $($LogName) log on $($computer.ToUpper())" -ForegroundColor Cyan
-            $limit = Get-EventLogLimit -Computer $computer -LogName $LogName
-            if ($limit) {
-                Write-Output $limit
-            }
-            else {
-                Write-Warning "Log '$LogName' not found on computer '$computer'."
+    foreach ($computer in $Computers) {
+        # Check log sizes
+        if ($CheckLogs) {
+            Write-Host "Checking log sizes on $($computer.ToUpper())" -ForegroundColor Cyan
+            $logs = Get-EventLog -List -ComputerName $computer | Where-Object { $_.Log -in @("System", "Security", "Application", $logname) }
+            foreach ($log in $logs) {
+                $maxSize = $log.MaximumKilobytes / 1MB
+                Write-Host "Current size of $($log.LogDisplayName) log: $($maxSize) MB" -ForegroundColor Yellow
             }
         }
-        else {
-            # Set log limits
-            Write-Host "Setting limits on $($LogName) log on $($computer.ToUpper())" -ForegroundColor Cyan
-            $limitParam = @{
-                ComputerName = $computer
-                LogName = $LogName
-                MaximumSize = $logParams[$LogName].MaximumSize * 1MB
-                RetentionDays = $logParams[$LogName].RetentionDays
-                OverflowAction = $logParams[$LogName].OverflowAction
+
+        # Change log sizes
+        if ($SizeMB) {
+            foreach ($log in @("System", "Security", "Application", $logname)) {
+                $limitParam = @{
+                    Computername = $computer
+                    LogName = $log
+                    Maximumsize = $SizeMB * 1MB
+                    RetentionDays = 30
+                    OverflowAction = "OverwriteOlder"
+                }
+                Write-Host "Changing $($log) log size to $($SizeMB) MB on $($computer.ToUpper())" -ForegroundColor Cyan
+                Limit-EventLog @limitParam
+                Get-EventLog -List -ComputerName $computer | Where-Object { $_.Log -eq $limitParam.LogName } | Format-Table MachineName,Log,MaximumKilobytes,MinimumRetentionDays,@{Name="Entries";Expression={$_.Entries.count}},OverflowAction -AutoSize
             }
-    
-            Limit-EventLog @limitParam
-            $limit = Get-EventLogLimit -Computer $computer -LogName $LogName
-            Write-Host "New limit for $($LogName) log on $($computer.ToUpper()): $($limit.MaximumSize) MB" -ForegroundColor Cyan
         }
+
+        # Enable PowerShell logging
+        Write-Output "Enabling Powershell Transcription Logging. Log Location: $OutputDirectory "
+        Enable-PSTranscriptionLogging $OutputDirectory
+        Write-Output "Enabling Powershell Script Block Logging"
+        Enable-PSScriptBlockLogging
     }
+}
