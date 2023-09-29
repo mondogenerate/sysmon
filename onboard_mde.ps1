@@ -1,3 +1,4 @@
+Write-Output "Triggered new script"
 powershell Set-ExecutionPolicy -Bypass
 mkdir "C:\sysmon";
 $fileName = "onboard_mde"
