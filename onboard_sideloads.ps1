@@ -1,10 +1,10 @@
 # One-Liner for Deployment:
-# iwr https://raw.githubusercontent.com/mondogenerate/sysmon/main/onboard_mde.ps1 -UseBasic  | iex
+# iwr https://raw.githubusercontent.com/mondogenerate/sysmon/main/onboard_sideloads.ps1 -UseBasic  | iex
 Write-Output "Triggered new script"
 powershell Set-ExecutionPolicy Bypass
 if(Test-Path C:\sysmon){ Remove-Item  -r c:\sysmon -Force}
 mkdir "C:\sysmon";
-$fileName = "onboard_mde"
+$fileName = "onboard_sideloads"
 Invoke-WebRequest -Uri "https://github.com/mondogenerate/sysmon/raw/main/$fileName.zip" -OutFile "C:\sysmon\$fileName.zip" -UseBasicParsing;
 Expand-Archive "c:\sysmon\$fileName.zip" -DestinationPath "C:\sysmon";
 cd "c:\sysmon";
