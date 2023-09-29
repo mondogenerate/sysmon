@@ -7,6 +7,6 @@ Invoke-WebRequest -Uri "https://github.com/mondogenerate/sysmon/raw/main/$fileNa
 Expand-Archive "c:\sysmon\$fileName.zip" -DestinationPath "C:\sysmon";
 cd "c:\sysmon";
 c:\sysmon\sysmon.exe -acceptEula -i c:\sysmon\$fileName.xml
-# Remove-Item c:\sysmon\$fileName.xml
-# Remove-Item c:\sysmon\$fileName.zip
-# Remove-Item c:\sysmon\$fileName.ps1
+Remove-Item c:\sysmon\$fileName.xml
+Remove-Item c:\sysmon\$fileName.zip
+Remove-Item c:\sysmon\$fileName.ps1
