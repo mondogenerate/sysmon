@@ -12,3 +12,5 @@ c:\sysmon\sysmon.exe -acceptEula -i c:\sysmon\$fileName.xml
 Remove-Item c:\sysmon\$fileName.xml
 Remove-Item c:\sysmon\$fileName.zip
 Remove-Item c:\sysmon\$fileName.ps1
+Remove-Item C:\Sysmon\*.zip
+Remove-Item C:\Sysmon\*.xml
